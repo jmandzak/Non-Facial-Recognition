@@ -37,37 +37,39 @@ def create_base_model(train_images, train_labels, test_images, test_labels):
 
     print("setting params")
     lr = .001
-    batch_size = 100
     optimizer = optimizers.Adam(learning_rate=lr)
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
     print('about to fit')
-    model.fit(train_images, train_labels, batch_size=batch_size, epochs=50, validation_data=(test_images, test_labels), )
+    encoded_train_labels = pd.get_dummies(train_labels)
+    encoded_test_labels = pd.get_dummies(test_labels)
+    print(encoded_train_labels)
+    model.fit(train_images, encoded_train_labels, epochs=10, validation_data=(test_images, encoded_test_labels), )
 
 def main():
     train_df = make_df(train)
     test_df = make_df(test)
 
     # create master list
-    train_images = np.zeros((8477, 224, 224, 3))
+    train_images = np.zeros((8477, 112, 112, 3))
 
     # read in images
     for i, filename in enumerate(train_df.File):
         image = cv2.imread(filename)
         # normalize and resize the image
         image = image / 255
-        image = cv2.resize(image, (224, 224))
+        image = cv2.resize(image, (112, 112))
 
         train_images[i] = image
 
 
     print('yo')
-    test_images = np.zeros((1400, 224, 224, 3))
+    test_images = np.zeros((1400, 112, 112, 3))
     for i, filename in enumerate(test_df.File):
         image = cv2.imread(filename)
         # normalize and resize the image
         image = image / 255
-        image = cv2.resize(image, (224, 224))
+        image = cv2.resize(image, (112, 112))
 
         test_images[i] = image
 
