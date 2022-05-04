@@ -25,21 +25,24 @@ def make_df(filename):
     dic = {'City': cities, 'File': files}
     return pd.DataFrame(dic, columns=['City', 'File'])
 
-# def create_base_model(train_images, train_labels, test_images, test_labels):
+def create_base_model(train_images, train_labels, test_images, test_labels):
     
-#     print("Building Model")
-#     model = Sequential()
-#     model.add(layers.Conv2D(40, (5, 5), input_shape=((train_images[0].shape)), activation='relu'))
-#     model.add(layers.MaxPooling2D(2, 2))
-#     model.add(layers.Flatten())
-#     model.add(layers.Dense(100, activation='relu'))
-#     model.add(layers.Dense(10, activation='softmax'))
+    print("Building Model")
+    model = Sequential()
+    model.add(layers.Conv2D(40, (5, 5), input_shape=((train_images[0].shape)), activation='relu'))
+    model.add(layers.MaxPooling2D(2, 2))
+    model.add(layers.Flatten())
+    model.add(layers.Dense(100, activation='relu'))
+    model.add(layers.Dense(10, activation='softmax'))
 
-#     print("setting params")
-#     lr = .001
-#     batch_size = 100
-#     optimizer = optimizers.Adam(learning_rate=lr)
-#     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+    print("setting params")
+    lr = .001
+    batch_size = 100
+    optimizer = optimizers.Adam(learning_rate=lr)
+    model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
+    print('about to fit')
+    model.fit(train_images, train_labels, batch_size=batch_size, epochs=50, validation_data=(test_images, test_labels), )
 
 def main():
     train_df = make_df(train)
@@ -80,7 +83,7 @@ def main():
     cv2.imwrite('train.jpg', train_images[0]*255)
     cv2.imwrite('test.jpg', test_images[0]*255)
 
-    # create_base_model(train_images, train_df.City, test_images, test_df.City)
+    create_base_model(train_images, train_df.City, test_images, test_df.City)
 
 if __name__ == '__main__':
     main()
