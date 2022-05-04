@@ -26,16 +26,47 @@ def make_df(filename):
     return pd.DataFrame(dic, columns=['City', 'File'])
 
 def create_base_model(train_images, train_labels, test_images, test_labels):
-    
-    print("Building Model")
     model = Sequential()
-    model.add(layers.Conv2D(40, (5, 5), input_shape=((train_images[0].shape)), activation='relu'))
-    model.add(layers.MaxPooling2D(2, 2))
-    model.add(layers.Flatten())
-    model.add(layers.Dense(100, activation='relu'))
-    model.add(layers.Dense(10, activation='softmax'))
 
-    print("setting params")
+    # very small CNN from project 3 of this class
+
+    # print("Building Model")
+    # model.add(layers.Conv2D(40, (5, 5), input_shape=((train_images[0].shape)), activation='relu'))
+    # model.add(layers.MaxPooling2D(2, 2))
+    # model.add(layers.Flatten())
+    # model.add(layers.Dense(100, activation='relu'))
+    # model.add(layers.Dense(10, activation='softmax'))
+
+    # print("setting params")
+    # lr = .001
+    # optimizer = optimizers.Adam(learning_rate=lr)
+    # model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
+
+    # VGG16 (minus the first couple convolutional layers since we're starting with a 112x112 instead of 224x224)
+    #convolutional layers
+    model.add(layers.Conv2D(input_shape=(112, 112, 3),filters=128, kernel_size=(3,3), padding="same", activation="relu"))
+    model.add(layers.Conv2D(filters=128, kernel_size=(3,3), padding="same", activation="relu"))
+    model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
+    model.add(layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
+    model.add(layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
+    model.add(layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
+    model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
+    model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+    model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+    model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+    model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
+    model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+    model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+    model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+    model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
+
+    #fully connected layers
+    model.add(layers.Flatten())
+    model.add(layers.Dense(units=4096,activation="relu"))
+    model.add(layers.Dense(units=4096,activation="relu"))
+    model.add(layers.Dense(units=10, activation="softmax"))
+    
     lr = .001
     optimizer = optimizers.Adam(learning_rate=lr)
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
