@@ -5,7 +5,9 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras import layers, optimizers
+from tensorflow.keras import layers, optimizers, losses
+from tensorflow.keras.applications import MobileNetV3Small, MobileNetV3Large
+import tensorflow_addons as tfa
 
 train = "cities_dataset_10/train_validation"
 test = "cities_dataset_10/test"
@@ -26,56 +28,114 @@ def make_df(filename):
     return pd.DataFrame(dic, columns=['City', 'File'])
 
 def create_base_model(train_images, train_labels, test_images, test_labels):
-    model = Sequential()
 
     # very small CNN from project 3 of this class
 
     # print("Building Model")
+    # model = Sequential()
     # model.add(layers.Conv2D(40, (5, 5), input_shape=((train_images[0].shape)), activation='relu'))
     # model.add(layers.MaxPooling2D(2, 2))
     # model.add(layers.Flatten())
     # model.add(layers.Dense(100, activation='relu'))
     # model.add(layers.Dense(10, activation='softmax'))
 
-    # print("setting params")
-    # lr = .001
-    # optimizer = optimizers.Adam(learning_rate=lr)
-    # model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
+    # custom made CNN
+    # model = Sequential()
+    # model.add(layers.Conv2D(32, (4,4), input_shape=((train_images[0].shape)), activation='relu', padding='same'))
+    # # model.add(layers.Conv2D(32, (4,4), activation='relu', padding='same'))
+    # model.add(layers.MaxPool2D(pool_size=(4,4),strides=(4,4)))
+    # # model.add(layers.Conv2D(64, (4,4), activation='relu', padding='same'))
+    # model.add(layers.Conv2D(64, (4,4), activation='relu', padding='same'))
+    # model.add(layers.MaxPool2D(pool_size=(4,4),strides=(4,4)))
+    # model.add(layers.Flatten())
+    # model.add(layers.Dense(100, activation='relu'))
+    # model.add(layers.Dense(10, activation='softmax'))
+
+
+    # with triplet loss
+    model = Sequential()
+    model.add(layers.Conv2D(32, (4,4), input_shape=((train_images[0].shape)), activation='relu', padding='same'))
+    # model.add(layers.Conv2D(32, (4,4), activation='relu', padding='same'))
+    model.add(layers.MaxPool2D(pool_size=(4,4),strides=(4,4)))
+    # model.add(layers.Conv2D(64, (4,4), activation='relu', padding='same'))
+    model.add(layers.Conv2D(64, (4,4), activation='relu', padding='same'))
+    model.add(layers.MaxPool2D(pool_size=(4,4),strides=(4,4)))
+    model.add(layers.Flatten())
+    model.add(layers.Dense(256, activation=None))
+    model.add(layers.Lambda(lambda x: tf.math.l2_normalize(x, axis=1)))
+
+    print(model.summary())
+
 
 
     # VGG16 (minus the first couple convolutional layers since we're starting with a 112x112 instead of 224x224)
     #convolutional layers
-    model.add(layers.Conv2D(input_shape=(112, 112, 3),filters=128, kernel_size=(3,3), padding="same", activation="relu"))
-    model.add(layers.Conv2D(filters=128, kernel_size=(3,3), padding="same", activation="relu"))
-    model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
-    model.add(layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
-    model.add(layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
-    model.add(layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
-    model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
-    model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-    model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-    model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-    model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
-    model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-    model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-    model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-    model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
+    # model = Sequential()
+    # model.add(layers.Conv2D(input_shape=(112, 112, 3),filters=128, kernel_size=(3,3), padding="same", activation="relu"))
+    # model.add(layers.Conv2D(filters=128, kernel_size=(3,3), padding="same", activation="relu"))
+    # model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
+    # model.add(layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
+    # model.add(layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
+    # model.add(layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
+    # model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
+    # model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+    # model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+    # model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+    # model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
+    # model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+    # model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+    # model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+    # model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
 
     #fully connected layers
-    model.add(layers.Flatten())
-    model.add(layers.Dense(units=4096,activation="relu"))
-    model.add(layers.Dense(units=4096,activation="relu"))
-    model.add(layers.Dense(units=10, activation="softmax"))
+    # model.add(layers.Flatten())
+    # model.add(layers.Dense(units=4096,activation="relu"))
+    # model.add(layers.Dense(units=4096,activation="relu"))
+    # model.add(layers.Dense(units=10, activation="softmax"))
+
+    # mobile net
+    # model = MobileNetV3Small(input_shape=(112,112,3), classes=10, weights=None)
     
     lr = .001
-    optimizer = optimizers.Adam(learning_rate=lr)
-    model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+    optimizer = optimizers.SGD(learning_rate=lr)
+    model.compile(optimizer=optimizer, loss=tfa.losses.TripletSemiHardLoss())
+    # model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
+    # print(model.predict(test_images))
+    # print('\n\n')
+    # print(model.predict(train_images))
+
+    # create tensorboard
+    #creating unique name for tensorboard directory
+    log_dir = "logs/" + str(f'opt=sgd-smallModel')
+    #Tensforboard callback function
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
     print('about to fit')
     encoded_train_labels = pd.get_dummies(train_labels)
     encoded_test_labels = pd.get_dummies(test_labels)
-    print(encoded_train_labels)
-    model.fit(train_images, encoded_train_labels, epochs=10, validation_data=(test_images, encoded_test_labels), )
+
+    # print(encoded_train_labels)
+    # print(encoded_train_labels.shape)
+
+    # using integer representation instead of dummies for the triplet semi hard loss model
+    numerical_train_labels = train_labels.replace(['Amsterdam', 'Barcelona', 'Bucharest', 'Budapest', 'Istanbul', 'London', 'Paris', 'Rome', 'Stockholm', 'Vienna'], [10, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # print(numerical_train_labels)
+    # print(numerical_train_labels.shape)
+
+    # model.fit(train_images, encoded_train_labels, epochs=100, validation_data=(test_images, encoded_test_labels), callbacks=[tensorboard_callback])
+    # model.fit(train_images, encoded_train_labels, epochs=100, validation_data=(test_images, encoded_test_labels))
+    model.fit(train_images, numerical_train_labels, epochs=5)
+
+    train_embeddings = model.predict(train_images)
+    test_embeddings = model.predict(test_images)
+
+    # I'm not even sure if this next model should exist
+    # new_model = Sequential()
+    # new_model.add(layers.Dense(10, input_dim=256, activation='softmax'))
+    # new_model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+    # new_model.fit(train_embeddings, encoded_train_labels, epochs=5)
 
 def main():
     train_df = make_df(train)
@@ -108,10 +168,10 @@ def main():
     train_images = np.asarray(train_images)
     test_images = np.asarray(test_images)
 
-    print(train_images.shape)
-    print(train_df.City.shape)
-    print(test_images.shape)
-    print(test_df.City.shape)
+    # print(train_images.shape)
+    # print(train_df.City.shape)
+    # print(test_images.shape)
+    # print(test_df.City.shape)
 
     cv2.imwrite('train.jpg', train_images[0]*255)
     cv2.imwrite('test.jpg', test_images[0]*255)
