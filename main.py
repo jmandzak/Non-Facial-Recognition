@@ -8,6 +8,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers, optimizers, losses
 from tensorflow.keras.applications import MobileNetV3Small, MobileNetV3Large
 import tensorflow_addons as tfa
+from sklearn import svm
+from sklearn.metrics import classification_report
 
 train = "cities_dataset_10/train_validation"
 test = "cities_dataset_10/test"
@@ -65,9 +67,6 @@ def create_base_model(train_images, train_labels, test_images, test_labels):
     model.add(layers.Dense(256, activation=None))
     model.add(layers.Lambda(lambda x: tf.math.l2_normalize(x, axis=1)))
 
-    print(model.summary())
-
-
 
     # VGG16 (minus the first couple convolutional layers since we're starting with a 112x112 instead of 224x224)
     #convolutional layers
@@ -106,12 +105,6 @@ def create_base_model(train_images, train_labels, test_images, test_labels):
     # print('\n\n')
     # print(model.predict(train_images))
 
-    # create tensorboard
-    #creating unique name for tensorboard directory
-    log_dir = "logs/" + str(f'opt=sgd-smallModel')
-    #Tensforboard callback function
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-
     print('about to fit')
     encoded_train_labels = pd.get_dummies(train_labels)
     encoded_test_labels = pd.get_dummies(test_labels)
@@ -120,16 +113,29 @@ def create_base_model(train_images, train_labels, test_images, test_labels):
     # print(encoded_train_labels.shape)
 
     # using integer representation instead of dummies for the triplet semi hard loss model
-    numerical_train_labels = train_labels.replace(['Amsterdam', 'Barcelona', 'Bucharest', 'Budapest', 'Istanbul', 'London', 'Paris', 'Rome', 'Stockholm', 'Vienna'], [10, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    numerical_train_labels = train_labels.replace(['Amsterdam', 'Barcelona', 'Bucharest', 'Budapest', 'Istanbul', 'London', 'Paris', 'Rome', 'Stockholm', 'Vienna'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    numerical_test_labels = test_labels.replace(['Amsterdam', 'Barcelona', 'Bucharest', 'Budapest', 'Istanbul', 'London', 'Paris', 'Rome', 'Stockholm', 'Vienna'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     # print(numerical_train_labels)
     # print(numerical_train_labels.shape)
 
     # model.fit(train_images, encoded_train_labels, epochs=100, validation_data=(test_images, encoded_test_labels), callbacks=[tensorboard_callback])
     # model.fit(train_images, encoded_train_labels, epochs=100, validation_data=(test_images, encoded_test_labels))
-    model.fit(train_images, numerical_train_labels, epochs=5)
+
+    # for training the triplet loss model
+    # create tensorboard
+    #creating unique name for tensorboard directory
+    log_dir = "logs/" + str(f'tripLoss-opt=SGD')
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+    model.fit(train_images, numerical_train_labels, epochs=5, validation_data=(test_images, numerical_test_labels), callbacks=tensorboard_callback)
 
     train_embeddings = model.predict(train_images)
     test_embeddings = model.predict(test_images)
+
+    # create svm to classify embeddings
+    clf = svm.SVC()
+    clf.fit(train_embeddings, numerical_train_labels)
+    y_pred = clf.predict(test_embeddings)
+    print(classification_report(numerical_test_labels, y_pred))
 
     # I'm not even sure if this next model should exist
     # new_model = Sequential()
