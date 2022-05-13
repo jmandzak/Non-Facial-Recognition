@@ -176,8 +176,8 @@ def main():
     # small_trip_model = create_trip_model(train_images_small, train_df_small.City, test_images_small, test_df_small.City)
 
     trip_model_holdout = tf.keras.models.load_model('saved_models/holdout-tripLoss-Adagrad-128-withDropout')
-    # y_pred_train = trip_model_holdout.predict(train_images_small)
-    y_pred_train = trip_model_holdout.predict(train_images_holdout)
+    y_pred = trip_model_holdout.predict(train_images_small)
+    # y_pred = trip_model_holdout.predict(train_images_holdout)
 
     # get the baseline model, remove the softmax layer
     # baseline_model_holdout = tf.keras.models.load_model('saved_models/holdout-baseline-Adagrad-128')
@@ -185,18 +185,18 @@ def main():
     # for layer in baseline_model_holdout.layers[:-1]:
     #     chopped_baseline_model.add(layer)
 
-    # y_pred_train = chopped_baseline_model.predict(train_images_small)
+    # y_pred = chopped_baseline_model.predict(train_images_small)
 
     true_match = 0
     false_match = 0
     true_different = 0
     false_different = 0
     # for i in range(845):
-    #     first = y_pred_train[i]
-    #     second_bad = y_pred_train[i+1+846]
-    #     # second_bad = y_pred_train[i+1+1692]
-    #     # second_bad = y_pred_train[i+1 + 2538]
-    #     second = y_pred_train[i+1]
+    #     first = y_pred[i]
+    #     second_bad = y_pred[i+1+846]
+    #     # second_bad = y_pred[i+1+1692]
+    #     # second_bad = y_pred[i+1 + 2538]
+    #     second = y_pred[i+1]
 
     #     # take square of differences and sum them
     #     l2 = np.sum(np.power((first-second),2))
@@ -217,13 +217,17 @@ def main():
     #     else:
     #         different_bad += 1
 
+
+    # normalize vector
+    y_pred = y_pred / np.max(y_pred)
+
     # we need to find the best split for both the baseline and the trip loss model
-    split = 0.06
+    split = 1.4
     # labels = list(train_df_small.City)
-    labels = list(train_df_holdout.City)
+    labels = list(train_df_small.City)
     for i in range(len(labels)):
         for j in range(i+1, len(labels)):
-            l2 = np.sum(np.power((y_pred_train[i]-y_pred_train[j]),2))
+            l2 = np.sum(np.power((y_pred[i]-y_pred[j]),2))
             # first check to see if the labels are the same
             if labels[i] == labels[j]:
                 if l2 < split:
