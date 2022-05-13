@@ -175,9 +175,16 @@ def main():
     # small_base_model = create_base_model(train_images_small, train_df_small.City, test_images_small, test_df_small.City)
     # small_trip_model = create_trip_model(train_images_small, train_df_small.City, test_images_small, test_df_small.City)
 
-    trip_model_holdout = tf.keras.models.load_model('saved_models/holdout-tripLoss-Adagrad-128-withDropout')
+    # when testing the baseline model, we need to remove the last softmax layer. The easiest way I've found to do this is to
+    # create a new model that has all the same layers/weights of the old one minus the softmax layer
+    model = tf.keras.models.load_model('saved_models/holdout-baseline-Adagrad-128')
+    new_model = Sequential()
 
-    y_pred = trip_model_holdout.predict(train_images_small)
+    for layer in model.layers[:-1]:
+        new_model.add(layer)
+
+    y_pred = new_model.predict(train_images_small)
+    
     # y_pred = trip_model_holdout.predict(train_images_holdout)
 
     # get the baseline model, remove the softmax layer
