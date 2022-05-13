@@ -177,8 +177,6 @@ def main():
 
     trip_model_holdout = tf.keras.models.load_model('saved_models/holdout-tripLoss-Adagrad-128-withDropout')
 
-    trip_model_holdout.save('saved_models/test-model.h5')
-    exit()
     y_pred = trip_model_holdout.predict(train_images_small)
     # y_pred = trip_model_holdout.predict(train_images_holdout)
 
