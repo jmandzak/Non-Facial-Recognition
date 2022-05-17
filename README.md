@@ -18,6 +18,9 @@ Any one of these models can be easily evaluated with the testing script `test_mo
 
 If you wish to test all 8 models, simply run `python test_all_models.py`. This script conveniently tests all of the models in the saved models directory.
 
+### Building Your Own Model
+If you wish to build your own models, you will have to manually change things in build.py. Some of these include model architecture, optimizers/learning rates, and the variables create_new_models and create_new_holdout_models which are currently set to False so you can control what you want to build.
+
 *NOTE- if you attempt to train extra models and place them into the saved models directory, please follow the naming convention. Specifically, 'holdout' needs to be in the name if you are training on only 8 cities, and either 'baseline' or 'triploss' needs to be in the model name to specify what kind of model you are training. There are no promises made that new models you add will work with the test script.
 
 #

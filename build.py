@@ -184,7 +184,7 @@ def main():
     create_new_holdout_models = False
     if create_new_holdout_models:
         small_base_model = create_base_model(train_images_small, train_df_small.City, test_images_small, test_df_small.City, 8)
-        small_trip_model = create_trip_model(train_images_small, train_df_small.City, test_images_small, test_df_small.City)
+        small_trip_model = create_trip_model(train_images_small, train_df_small.City, test_images_small, test_df_small.City, holdout=True)
 
 if __name__ == '__main__':
     main()
