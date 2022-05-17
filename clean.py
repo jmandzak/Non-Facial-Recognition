@@ -29,14 +29,35 @@ def make_df(filename):
     return pd.DataFrame(dic, columns=['City', 'File'])
 
 def create_base_model(train_images, train_labels, test_images, test_labels):
+    encoded_train_labels = pd.get_dummies(train_labels)
+    encoded_test_labels = pd.get_dummies(test_labels)
+    
+    # early stopping
+    es = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
+    # create tensorboard
+    #creating unique name for tensorboard directory
+    log_dir = "final_logs/" + str(f'holdout-baseline-opt=Adagrad-128-withDropout')
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+    
+    # continue_training = False
+    # if continue_training:
+    #     model = tf.keras.models.load_model('saved_models_h5/baseline-Adagrad-128-withDropout.h5')
+    #     model.fit(train_images, encoded_train_labels, initial_epoch=99, epochs=200, validation_data=(test_images, encoded_test_labels), callbacks=[tensorboard_callback, es])
+    #     model.save('saved_models_h5/baseline-Adagrad-128-withDropout.h5')
+    #     exit()
+    
+    
+    
     # custom made CNN
     model = Sequential()
     model.add(layers.Conv2D(32, (4,4), input_shape=((train_images[0].shape)), activation='relu', padding='same'))
     # model.add(layers.Conv2D(32, (4,4), activation='relu', padding='same'))
     model.add(layers.MaxPool2D(pool_size=(4,4),strides=(4,4)))
+    model.add(layers.SpatialDropout2D(0.5))
     # model.add(layers.Conv2D(64, (4,4), activation='relu', padding='same'))
     model.add(layers.Conv2D(64, (4,4), activation='relu', padding='same'))
     model.add(layers.MaxPool2D(pool_size=(4,4),strides=(4,4)))
+    model.add(layers.SpatialDropout2D(0.5))
     model.add(layers.Flatten())
     model.add(layers.Dense(128, activation='relu'))
     # model.add(layers.Dense(10, activation='softmax'))
@@ -45,22 +66,13 @@ def create_base_model(train_images, train_labels, test_images, test_labels):
     lr = .001
     optimizer = optimizers.Adagrad(learning_rate=lr)
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-    
-    encoded_train_labels = pd.get_dummies(train_labels)
-    encoded_test_labels = pd.get_dummies(test_labels)
-    
-    # early stopping
-    es = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
-    # create tensorboard
-    #creating unique name for tensorboard directory
-    log_dir = "logs/" + str(f'holdout-baseline-opt=Adagrad-128')
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-    model.fit(train_images, encoded_train_labels, epochs=100, validation_data=(test_images, encoded_test_labels), callbacks=[tensorboard_callback, es])
+
+    model.fit(train_images, encoded_train_labels, epochs=200, validation_data=(test_images, encoded_test_labels), callbacks=[tensorboard_callback, es])
     # model.fit(train_images, encoded_train_labels, epochs=5, validation_data=(test_images, encoded_test_labels))
 
     save = True
     if save:
-        model.save('saved_models/holdout-baseline-Adagrad-128')
+        model.save('saved_models_h5/holdout-baseline-Adagrad-128-withDropout.h5')
 
     return model
 
@@ -68,8 +80,10 @@ def create_base_model(train_images, train_labels, test_images, test_labels):
 
 def create_trip_model(train_images, train_labels, test_images, test_labels, svc=True):
     
-    numerical_train_labels = train_labels.replace(['Amsterdam', 'Barcelona', 'Bucharest', 'Budapest', 'Istanbul', 'London', 'Paris', 'Rome', 'Stockholm', 'Vienna'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    numerical_test_labels = test_labels.replace(['Amsterdam', 'Barcelona', 'Bucharest', 'Budapest', 'Istanbul', 'London', 'Paris', 'Rome', 'Stockholm', 'Vienna'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # numerical_train_labels = train_labels.replace(['Amsterdam', 'Barcelona', 'Bucharest', 'Budapest', 'Istanbul', 'London', 'Paris', 'Rome', 'Stockholm', 'Vienna'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # numerical_test_labels = test_labels.replace(['Amsterdam', 'Barcelona', 'Bucharest', 'Budapest', 'Istanbul', 'London', 'Paris', 'Rome', 'Stockholm', 'Vienna'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    numerical_train_labels = train_labels.replace(['Amsterdam', 'Barcelona', 'Budapest', 'Istanbul', 'London', 'Rome', 'Stockholm', 'Vienna'], [0, 1, 2, 3, 4, 5, 6, 7])
+    numerical_test_labels = test_labels.replace(['Amsterdam', 'Barcelona', 'Budapest', 'Istanbul', 'London', 'Rome', 'Stockholm', 'Vienna'], [0, 1, 2, 3, 4, 5, 6, 7])
 
     model = Sequential()
     model.add(layers.Conv2D(32, (4,4), input_shape=((train_images[0].shape)), activation='relu', padding='same'))
@@ -92,14 +106,14 @@ def create_trip_model(train_images, train_labels, test_images, test_labels, svc=
     es = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
     # create tensorboard
     #creating unique name for tensorboard directory
-    log_dir = "logs/" + str(f'holdout-tripLoss-opt=Adagrad-withDropout-128')
+    log_dir = "final_logs/" + str(f'holdout-tripLoss-opt=Adagrad-withDropout-128')
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-    model.fit(train_images, numerical_train_labels, epochs=100, validation_data=(test_images, numerical_test_labels), callbacks=[tensorboard_callback, es])
+    model.fit(train_images, numerical_train_labels, epochs=200, validation_data=(test_images, numerical_test_labels), callbacks=[tensorboard_callback, es])
     # model.fit(train_images, numerical_train_labels, epochs=10, validation_data=(test_images, numerical_test_labels))
 
     save = True
     if save:
-        model.save('saved_models/holdout-tripLoss-Adagrad-128-withDropout')
+        model.save('saved_models_h5/holdout-tripLoss-Adagrad-128-withDropout.h5')
 
     if svc:
         train_embeddings = model.predict(train_images)
@@ -109,7 +123,7 @@ def create_trip_model(train_images, train_labels, test_images, test_labels, svc=
         clf = svm.SVC()
         clf.fit(train_embeddings, numerical_train_labels)
         y_pred = clf.predict(test_embeddings)
-        print(classification_report(numerical_test_labels, y_pred))
+        print(classification_report(numerical_test_labels, y_pred, digits=4))
 
     return model
 
@@ -161,6 +175,10 @@ def main():
 
     # create_base_model(train_images, train_df.City, test_images, test_df.City)
     # create_trip_model(train_images, train_df.City, test_images, test_df.City)
+    
+
+
+    # exit()
 
     # change the data to hold 2 cities out and train on that
     # Bucharest has 849, Paris last entry at 1693
@@ -175,25 +193,28 @@ def main():
     # small_base_model = create_base_model(train_images_small, train_df_small.City, test_images_small, test_df_small.City)
     # small_trip_model = create_trip_model(train_images_small, train_df_small.City, test_images_small, test_df_small.City)
 
+    # exit()
+
     # when testing the baseline model, we need to remove the last softmax layer. The easiest way I've found to do this is to
     # create a new model that has all the same layers/weights of the old one minus the softmax layer
-    model = tf.keras.models.load_model('saved_models/holdout-baseline-Adagrad-128')
-    new_model = Sequential()
+    # model = tf.keras.models.load_model('saved_models/holdout-baseline-Adagrad-128')
+    # new_model = Sequential()
 
-    for layer in model.layers[:-1]:
-        new_model.add(layer)
+    # for layer in model.layers[:-1]:
+    #     new_model.add(layer)
 
-    y_pred = new_model.predict(train_images_small)
+    # y_pred = new_model.predict(train_images_small)
     
+    # trip_model_holdout = tf.keras.models.load_model('saved_models_h5/holdout-tripLoss-Adagrad-128-withDropout.h5')
     # y_pred = trip_model_holdout.predict(train_images_holdout)
 
     # get the baseline model, remove the softmax layer
-    # baseline_model_holdout = tf.keras.models.load_model('saved_models/holdout-baseline-Adagrad-128')
-    # chopped_baseline_model = Sequential()
-    # for layer in baseline_model_holdout.layers[:-1]:
-    #     chopped_baseline_model.add(layer)
+    baseline_model_holdout = tf.keras.models.load_model('saved_models_h5/holdout-tripLoss-Adagrad-128-withDropout.h5')
+    chopped_baseline_model = Sequential()
+    for layer in baseline_model_holdout.layers[:-1]:
+        chopped_baseline_model.add(layer)
 
-    # y_pred = chopped_baseline_model.predict(train_images_small)
+    y_pred = chopped_baseline_model.predict(train_images_holdout)
 
     true_match = 0
     false_match = 0
@@ -230,9 +251,9 @@ def main():
     y_pred = y_pred / np.max(y_pred)
 
     # we need to find the best split for both the baseline and the trip loss model
-    split = 1.4
+    split = 0.5
     # labels = list(train_df_small.City)
-    labels = list(train_df_small.City)
+    labels = list(train_df_holdout.City)
     for i in range(len(labels)):
         for j in range(i+1, len(labels)):
             l2 = np.sum(np.power((y_pred[i]-y_pred[j]),2))
