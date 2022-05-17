@@ -5,7 +5,6 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras import layers, optimizers
 import tensorflow_addons as tfa
 from sklearn import svm
 from sklearn.metrics import classification_report
